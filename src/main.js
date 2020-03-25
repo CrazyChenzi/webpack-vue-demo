@@ -1,10 +1,5 @@
-import '@babel/polyfill'
 import Vue from 'vue'
-import App from './App'
-
-const div = document.createElement('div')
-div.id = '#app'
-document.body.appendChild(div)
+import App from './App.vue'
 
 new Vue({
   el: '#app',

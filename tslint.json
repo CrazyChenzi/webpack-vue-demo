@@ -1,3 +1,0 @@
-{
-  "extend": ["tslint:recommended", "tslint-config-prettier"]
-}

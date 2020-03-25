@@ -12,13 +12,21 @@
  */
 
 const path = require('path')
+const VueLoaderPlugin = require('vue-loader/lib/plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
-  entry: path.resolve(__dirname, '../src/main.js'),
+  entry: ['babel-polyfill', path.resolve(__dirname, '../src/main.js')],
   output: {
     filename: 'js/[name].[hash:5].js',
     path: path.resolve(__dirname, '../dist'),
     publicPath: './'
+  },
+  resolve: {
+    extensions: ['.js', '.json', '.vue'],
+    alias: {
+      '@': path.resolve(__dirname, '../src')
+    }
   },
   module: {
     rules: [
@@ -58,7 +66,18 @@ module.exports = {
         test: /\.jsx?$/,
         loader: 'babel-loader',
         exclude: /node_modules/
+      },
+      {
+        test: /\.vue$/,
+        loader: 'vue-loader'
       }
     ]
-  }
+  },
+  plugins: [
+    new VueLoaderPlugin(),
+    new HtmlWebpackPlugin({
+      template: path.resolve(__dirname, '../index.html'),
+      filename: 'index.html'
+    })
+  ]
 }
