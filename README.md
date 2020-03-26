@@ -1,6 +1,8 @@
 # webpack-vue-demo
 基于webpack手动搭建vue环境
 
+[vue+typescript模板](https://github.com/blacklisten/webpack-vue-demo/blob/ts-template/README.md)
+
 ## 搭建webpack运行环境
 
 ```js
