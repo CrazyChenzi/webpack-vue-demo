@@ -1,265 +1,133 @@
 # webpack-vue-demo
-基于webpack手动搭建vue环境
+基于webpack手动搭建vue + ts环境
 
-## 搭建webpack运行环境
+## 在之前的js基础上搭建
+
+安装必要模块
 
 ```js
-npm init -y
-npm install webpack webpack-cli -D
+npm i vue-class-component vue-property-decorator --save
+npm i ts-loader typescript tslint tslint-loader tslint-config-standard --save-dev
 ```
 
-## 搭建基础项目配置
+### 修改webpack.base.conf.js
+
+**修改入口文件为main.ts**
+
+添加对ts的支持
 
 ```js
-/**
- * webpack.base.conf.js是公共配置文件，主要实现以下功能
- * 字体处理 url-loader
- * 处理图片及优化 url-loader
- * 识别Vue文件 vue-loader
- * 启用babel转码，es6->es5 babel
- * 音乐文件处理 url-loader
- * 配置打包后的html模块 HtmlWebpackPlugin
- * 配置resolve模块解析
- * @author blacklisten
- * @date 2020-03-24
- */
-
-const path = require('path')
-const VueLoaderPlugin = require('vue-loader/lib/plugin')
-const HtmlWebpackPlugin = require('html-webpack-plugin')
-
-module.exports = {
-  entry: ['babel-polyfill', path.resolve(__dirname, '../src/main.js')],
-  output: {
-    filename: 'js/[name].[hash:5].js',
-    path: path.resolve(__dirname, '../dist'),
-    publicPath: './'
-  },
-  resolve: {
-    extensions: ['.js', '.json', '.vue'],
-    alias: {
-      '@': path.resolve(__dirname, '../src')
+{
+  test: /\.tsx?$/,
+  exclude: /node_modules/,
+  use: [
+    'babel-loader',
+    {
+      loader: 'ts-loader',
+      options: { appendTsxSuffixTo: [/\.vue$/] }
+    },
+    {
+      loader: 'tslint-loader'
     }
-  },
-  module: {
-    rules: [
-      {
-        test: /\.(png|jpe?g|git|svg)(\?.*)?$/,
-        use: [
-          {
-            loader: 'url-loader',
-            options: {
-              limit: 10000,
-              name: 'img/[name]-[hash:5].[ext]'
-            }
-          }
-        ]
-      },
-      {
-        test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
-        loader: 'url-loader',
-        options: {
-          limit: 10000,
-          name: 'fonts/[name]-[hash:5].[ext]'
-        }
-      },
-      {
-        test: /\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/,
-        use: [
-          {
-            loader: 'url-loader',
-            options: {
-              limit: 4096,
-              name: 'media/[name]-[hash:5][ext]'
-            }
-          }
-        ]
-      },
-      {
-        test: /\.jsx?$/,
-        loader: 'babel-loader',
-        exclude: /node_modules/
-      },
-      {
-        test: /\.vue$/,
-        loader: 'vue-loader'
-      }
-    ]
-  },
-  plugins: [
-    new VueLoaderPlugin(),
-    new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, '../index.html'),
-      filename: 'index.html'
-    })
   ]
 }
-
 ```
 
-## 开发环境配置
+### 新建shims-vue.d.ts识别vue文件
 
 ```js
-/**
- * webpack.base.dev.js是开发环境配置文件，主要负责以下功能
- * 打包处理css和scss文件，启用sourceMap方便定位调试
- * postcss-loader自动添加前缀
- * 配置devServe开启热更新
- * @author blacklisten
- * @date 2020-03-24
- */
-const path = require('path')
-const webpackConfig = require('./webpack.base.conf')
-const webpack = require('webpack')
-const merge = require('webpack-merge')
-
-module.exports = merge(webpackConfig, {
-  mode: 'development',
-  devtool: 'inline-source-map',
-  module: {
-    rules: [
-      {
-        test: /\.(c|sc|sa)ss$/,
-        use: [
-          'vue-style-loader',
-          'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              ident: 'postcss',
-              sourceMap: true,
-              plugins: loader => []
-            }
-          },
-          {
-            loader: 'sass-loader',
-            options: {
-              indentedSyntax: true,
-              // sass-loader version >= 8
-              sassOptions: {
-                indentedSyntax: true
-              }
-            }
-          }
-        ]
-      }
-    ]
-  },
-  devServer: {
-    contentBase: path.resolve(__dirname, '../dist'),
-    port: 9000,
-    overlay: {
-      warnings: true,
-      errors: true
-    },
-    publicPath: '/'
-  },
-  plugins: [
-    // 启用模块热替换(HMR)
-    new webpack.HotModuleReplacementPlugin(),
-    // 当开启HMR的时候使用该插件会显示模块的相对路径
-    new webpack.NamedModulesPlugin(),
-    new webpack.DefinePlugin({
-      'process.env': {
-        NODE_ENV: JSON.stringify('development')
-      }
-    })
-  ]
-})
-
+declare module "*.vue" {
+  import Vue from "vue";
+  export default Vue;
+}
 ```
 
-## 运行环境配置
+### 新建shims-tsx.d.ts识别tsx
 
 ```js
-/**
- * webpack.prod.conf.js是生产环境配置文件
- * 打包处理css、scss文件
- * mini-css-extract-plugin抽离样式为单独css文件
- * postcss-loader自动添加前缀
- * clean-webpack-plugin每次打包清理创建的dist文件夹
- * optimize-css-assets-webpack-plugin压缩css文件代码
- * terser-webpack-plugin压缩js文件代码
- * @author blacklisten
- * @date 2020-03-24
- */
+import Vue, { VNode } from 'vue';
 
-const webpackConfig = require('./webpack.base.conf')
-const merge = require('webpack-merge')
-const webpack = require('webpack')
-// 抽离css
-const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-// 清理dist
-const { CleanWebpackPlugin } = require('clean-webpack-plugin')
-// 压缩css
-const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin')
-// 压缩js
-const TerseWebpackPlugin = require('terser-webpack-plugin')
-
-module.exports = merge(webpackConfig, {
-  mode: 'production',
-  devtool: 'clean-source-map',
-  module: {
-    rules: [
-      {
-        test: /\.(c|sa|sc)ss/,
-        use: [
-          MiniCssExtractPlugin.loader,
-          'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              ident: 'postcss',
-              plugins: loader => []
-            }
-          },
-          {
-            loader: 'sass-loader',
-            options: {
-              indentedSyntax: true,
-              // sass-loader version >= 8
-              sassOptions: {
-                indentedSyntax: true
-              }
-            }
-          }
-        ]
-      }
-    ]
-  },
-  plugins: [
-    new MiniCssExtractPlugin({
-      filename: 'css/[name]-[hash:5].css',
-      chunkFilename: 'css/[id]-[hash:5].css'
-    }),
-    new CleanWebpackPlugin(),
-    new webpack.DefinePlugin({
-      'process.env': {
-        NODE_ENV: JSON.stringify('production')
-      }
-    })
-  ],
-  optimization: {
-    minimizer: [
-      // 压缩css
-      new OptimizeCssAssetsWebpackPlugin({}),
-      // 压缩js
-      new TerseWebpackPlugin({
-        cache: true,
-        parallel: true,
-        sourceMap: true
-      })
-    ]
+declare global {
+  namespace JSX {
+    // tslint:disable no-empty-interface
+    interface Element extends VNode {}
+    // tslint:disable no-empty-interface
+    interface ElementClass extends Vue {}
+    interface IntrinsicElements {
+      [elem: string]: any;
+    }
   }
-})
+}
 ```
 
-## 遇到的问题
+### 添加tsconfig.json
 
-去掉style-loader即可[vue mini-css-extract-plugin document is not defined](https://github.com/vuejs/vue-ssr-docs/issues/196)
+```js
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "strict": true,
+    "jsx": "preserve",
+    "importHelpers": true,
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "types": [
+      "webpack-env"
+    ],
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
+    "lib": [
+      "esnext",
+      "dom",
+      "dom.iterable",
+      "scripthost"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
+```
 
-[vue  Using browsers option can cause errors. Browserslist config can be used for Babel, Autoprefixer, postcss-normalize and other tools.](https://github.com/browserslist/browserslist#readme)
+### 添加tslint.json
 
-[sass配置](https://vue-loader.vuejs.org/zh/guide/pre-processors.html#sass)
+```js
+{
+  "defaultSeverity": "error",
+  "extends": "tslint-config-standard",
+  "globals": {
+    "require": true
+  },
+  "rules": {
+    "space-before-function-paren": false,
+    "whitespace": [false],
+    "no-consecutive-blank-lines": false,
+    "no-angle-bracket-type-assertion": false,
+    "no-empty-character-class": false,
+    "deprecation": false,
+    "no-floating-promises": false,
+    "no-unnecessary-qualifier": false,
+    "strict-type-predicates": false,
+    "no-unnecessary-type-assertion": false
+  }
+}
+```
 
-[vue  webpack4 es6  to es5](https://juejin.im/post/5c68f4e9e51d454be11473b9)
+`这样就可以以ts的方式书写Vue了`
+
+[tslint rules](https://palantir.github.io/tslint/rules/)

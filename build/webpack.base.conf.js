@@ -16,14 +16,14 @@ const VueLoaderPlugin = require('vue-loader/lib/plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
-  entry: ['babel-polyfill', path.resolve(__dirname, '../src/main.js')],
+  entry: ['babel-polyfill', path.resolve(__dirname, '../src/main.ts')],
   output: {
     filename: 'js/[name].[hash:5].js',
     path: path.resolve(__dirname, '../dist'),
     publicPath: './'
   },
   resolve: {
-    extensions: ['.js', '.json', '.vue'],
+    extensions: ['.js', '.json', '.vue', '.ts'],
     alias: {
       '@': path.resolve(__dirname, '../src')
     }
@@ -70,6 +70,20 @@ module.exports = {
       {
         test: /\.vue$/,
         loader: 'vue-loader'
+      },
+      {
+        test: /\.tsx?$/,
+        exclude: /node_modules/,
+        use: [
+          'babel-loader',
+          {
+            loader: 'ts-loader',
+            options: { appendTsxSuffixTo: [/\.vue$/] }
+          },
+          {
+            loader: 'tslint-loader'
+          }
+        ]
       }
     ]
   },

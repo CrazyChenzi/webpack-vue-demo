@@ -8,28 +8,25 @@
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      message: '这是一个测试'
-    }
-  },
-  mounted() {
+<script lang="ts">
+import { Vue, Component } from 'vue-property-decorator'
+
+@Component({})
+export default class App extends Vue {
+  public message = '这是一个测试'
+  private mounted() {
     setTimeout(() => {
-      this.message = '2s后转为另一个测试'
+      this.message = '2s后的变化'
     }, 2000)
-    setTimeout(() => {
-      this.test()
+    setTimeout(async () => {
+      await this.test()
     }, 4000)
-  },
-  methods: {
-    async test() {
-      const a = await new Promise((resolve) => {
-        resolve('这是promise返回的message')
-      })
-      this.message = a
-    }
+  }
+  private async test() {
+    const message: string = await new Promise((resolve) => {
+      resolve('promise返回')
+    })
+    this.message = message
   }
 }
 </script>
